@@ -57,6 +57,9 @@ release:
   image: python:3.12-bookworm
   only:
     - tags
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: pypi
   before_script:
     - apt update && apt install -y jq
     - python3 -m pip install -U twine id
@@ -65,4 +68,4 @@ release:
     - resp=$(curl -X POST https://pypi.org/_/oidc/mint-token -d "{\"token\":\"${oidc_token}\"}")
     - api_token=$(jq --raw-output '.token' <<< "${resp}")
     - twine check dist/*
-    - twine upload --repository pypi -u __token__ "${api_token}" dist/*
+    - twine upload --repository pypi -u __token__ -p "${api_token}" dist/*
