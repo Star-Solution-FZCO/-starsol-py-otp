@@ -122,7 +122,9 @@ class TOTP:
         token = binary % (10**self.digits)
         return f'{token:0{self.digits}}'
 
-    def verify(self, code: str, timestamp: Optional[int] = None, window: int = 0) -> bool:
+    def verify(
+        self, code: str, timestamp: Optional[int] = None, window: int = 0
+    ) -> bool:
         """
         Verifies if the given code is valid for a specific timestamp within a given window.
 
