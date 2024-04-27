@@ -1,13 +1,67 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/pipeline/#customization
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
-- test
+  - lint
+  - test
+  - build
+  - release
+
+lint:
+  stage: lint
+  image: python:3.12-bookworm
+  before_script:
+    - python3 -m pip install --no-cache-dir -U pip pipenv
+    - python3 -m pipenv install --dev --deploy --system
+  script:
+    - python3 -m ruff format --no-cache --check .
+    - python3 -m mypy --python-version 3.9 .
+    - python3 -m mypy --python-version 3.10 .
+    - python3 -m mypy --python-version 3.11 .
+    - python3 -m mypy --python-version 3.12 .
+  except:
+    - tags
+
 sast:
   stage: test
 include:
-- template: Security/SAST.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+
+test:
+  image: python:3.12-bookworm
+  stage: test
+  before_script:
+    - python3 -m pip install --no-cache-dir -U pip pipenv
+    - python3 -m pipenv install --dev --deploy --system
+  script:
+    - python3 -m unittest discover -s ./tests
+  except:
+    - tags
+
+build:
+  stage: build
+  image: python:3.12-bookworm
+  only:
+    - tags
+  before_script:
+    - python3 -m pip install -U pip setuptools wheel
+  script:
+    - find . -type f -name '*.py' -exec sed -i "s/__VERSION__/$CI_COMMIT_TAG/g" {} +
+    - python -m build --outdir dist .
+  artifacts:
+    paths:
+      - dist/*
+
+release:
+  stage: release
+  environment:
+    name: release
+  image: python:3.12-bookworm
+  only:
+    - tags
+  before_script:
+    - apt update && apt install -y jq
+    - python3 -m pip install -U twine id
+  script:
+    - oidc_token=$(python -m id PYPI)
+    - resp=$(curl -X POST https://pypi.org/_/oidc/mint-token -d "{\"token\":\"${oidc_token}\"}")
+    - api_token=$(jq --raw-output '.token' <<< "${resp}")
+    - twine check dist/*
+    - twine upload --repository pypi -u __token__ "${api_token}" dist/*

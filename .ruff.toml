@@ -1,3 +1,5 @@
+exclude = ["tests"]
+
 [lint]
 extend-select = ["I"]
 
