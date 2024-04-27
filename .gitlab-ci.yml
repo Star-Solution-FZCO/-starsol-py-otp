@@ -41,8 +41,9 @@ build:
   only:
     - tags
   before_script:
-    - python3 -m pip install -U pip setuptools wheel
+    - python3 -m pip install -U pip build
   script:
+    - sed -i "s/__VERSION__/$CI_COMMIT_TAG/g" pyproject.toml
     - find . -type f -name '*.py' -exec sed -i "s/__VERSION__/$CI_COMMIT_TAG/g" {} +
     - python -m build --outdir dist .
   artifacts:
