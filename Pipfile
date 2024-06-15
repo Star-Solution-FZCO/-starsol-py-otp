@@ -12,6 +12,7 @@ pylint = "*"
 build = "*"
 twine = "*"
 id = "*"
+bandit = "*"
 
 [requires]
 python_version = "3.12"
