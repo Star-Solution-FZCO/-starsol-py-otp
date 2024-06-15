@@ -20,7 +20,7 @@ lint:
     - python3 -m bandit -r .
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_MERGE_REQUEST_ID == null && $CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG == null'
 
 
 sec-gitleaks:
@@ -32,7 +32,7 @@ sec-gitleaks:
     - gitleaks detect
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_MERGE_REQUEST_ID == null && $CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG == null'
 
 
 test:
@@ -45,7 +45,7 @@ test:
     - python3 -m unittest discover -s ./tests
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_MERGE_REQUEST_ID == null && $CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG == null'
 
 
 build:
