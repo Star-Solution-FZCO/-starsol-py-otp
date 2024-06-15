@@ -16,13 +16,22 @@ lint:
     - python3 -m mypy --python-version 3.10 .
     - python3 -m mypy --python-version 3.11 .
     - python3 -m mypy --python-version 3.12 .
-  except:
-    - tags
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
 
-sast:
-  stage: test
-include:
-  - template: Security/SAST.gitlab-ci.yml
+
+sec-gitleaks:
+  stage: lint
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - gitleaks detect
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+
 
 test:
   image: python:3.12-bookworm
@@ -32,14 +41,14 @@ test:
     - python3 -m pipenv install --dev --deploy --system
   script:
     - python3 -m unittest discover -s ./tests
-  except:
-    - tags
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+
 
 build:
   stage: build
   image: python:3.12-bookworm
-  only:
-    - tags
   before_script:
     - python3 -m pip install -U pip build
   script:
@@ -49,14 +58,15 @@ build:
   artifacts:
     paths:
       - dist/*
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+
 
 release:
   stage: release
   environment:
     name: release
   image: python:3.12-bookworm
-  only:
-    - tags
   id_tokens:
     PYPI_ID_TOKEN:
       aud: pypi
@@ -69,3 +79,5 @@ release:
     - api_token=$(jq --raw-output '.token' <<< "${resp}")
     - twine check dist/*
     - twine upload --repository pypi -u __token__ -p "${api_token}" dist/*
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
