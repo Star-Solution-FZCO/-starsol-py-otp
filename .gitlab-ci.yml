@@ -16,6 +16,7 @@ lint:
     - python3 -m mypy --python-version 3.10 .
     - python3 -m mypy --python-version 3.11 .
     - python3 -m mypy --python-version 3.12 .
+    - python3 -m bandit -r .
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
